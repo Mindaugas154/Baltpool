@@ -1,0 +1,55 @@
+{% extends 'base.html.twig' %}
+
+{% block body %}
+    <div class="container border border-light-subtle " >
+        <h1 class="text-center">URL Check</h1>
+        {% if errors is not empty %}
+        <div class="alert alert-danger" role="alert">
+            An error has occurred :
+        </div>
+        {% elseif  request_data is not empty %}
+        <div class="p-3 text-success-emphasis bg-success-subtle border  border-success-subtle rounded-3">
+
+            <p>
+                Provided link status code - <b>{{ request_data.status }}</b> ,redirects - <b>{{ request_data.redirects }}</b>
+                <br>
+                Keywords and it's usages:
+                <br>
+                {% if request_data.keywords is not empty %}
+                    {% for  key_word, occurrences in request_data.keywords %}
+                        {{ key_word }} - {{ occurrences }}<br>
+                    {% endfor %}
+                {% else %}
+                    no keywords were used
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        {{ form_start(form) }}
+
+        <div class="mb-3">
+            {{ form_label(form.url) }}
+            {{ form_widget(form.url, {'attr': {'class': 'form-control'}}) }}
+        </div>
+
+        <div class="mb-3">
+            {{ form_label(form.max_redirects) }}
+            {{ form_widget(form.max_redirects, {'attr': {'class': 'form-control'}}) }}
+        </div>
+
+        <div class="mb-3">
+            {{ form_label(form.key_words) }}
+            {#this should be changed to normal separation#}
+            {{ form_widget(form.key_words, {'attr': {'placeholder': 'Enter the keywords separated by new line (press Enter)', 'class': 'form-control' ,'rows':'5'}}) }}
+            <i>To search for multiple words, separate desired words by new line (press Enter)"</i>
+        </div>
+
+        <br>
+
+
+        <button class="btn btn-primary" type="submit" style="margin-right: 5px">Check URL</button>
+        <a class="btn btn-secondary" type="submit" href="{{ redirect_to_history }}">Link History</a>
+        {{ form_end(form) }}
+    </div>
+
+{% endblock %}
