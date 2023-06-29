@@ -8,11 +8,6 @@ use Doctrine\Persistence\ManagerRegistry;
 
 /**
  * @extends ServiceEntityRepository<LinkCheckHistoryRedirects>
- *
- * @method LinkCheckHistoryRedirects|null find($id, $lockMode = null, $lockVersion = null)
- * @method LinkCheckHistoryRedirects|null findOneBy(array $criteria, array $orderBy = null)
- * @method LinkCheckHistoryRedirects[]    findAll()
- * @method LinkCheckHistoryRedirects[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
  */
 class LinkCheckHistoryRedirectsRepository extends ServiceEntityRepository
 {
@@ -55,15 +50,6 @@ class LinkCheckHistoryRedirectsRepository extends ServiceEntityRepository
         return $resultSet->fetchAllAssociative();
     }
 
-    public function getLinkCheckData(): array
-    {
-        return $this->createQueryBuilder('lch')
-            ->leftJoin('link_check_history_redirects', 'lchr',
-                'ON','lchr.id_redirects = lch.id')
-            ->addSelect('lchr')
-            ->getQuery()
-            ->getResult();
-    }
 //    /**
 //     * @return LinkCheckHistoryRedirects[] Returns an array of LinkCheckHistoryRedirects objects
 //     */
