@@ -87,7 +87,10 @@ class LinkCheckerController extends AbstractController
         //I doubt other types will ever be required
         //$requestType = $formData['type'] ? 'GET' : 'POST';
         $requestType = 'GET';
-        $maxRedirects = $formData['max_redirects'];
+        $maxRedirects = (int)$formData['max_redirects'];
+        if($maxRedirects > 10) {
+            $maxRedirects = 10;
+        }
         $url = $formData['url'];
         $url = $this->validateUrl($url,$validator);
         $result = [];
