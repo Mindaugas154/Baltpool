@@ -39,6 +39,31 @@ class LinkCheckHistoryRedirectsRepository extends ServiceEntityRepository
         }
     }
 
+    public function getLinkCheckDataSql(): array
+    {
+        $conn = $this->getEntityManager()->getConnection();
+
+        //pasiimti viską per 1 sql
+        $sql = 'SELECT lch.*, lchr.*
+            FROM link_check_history lch
+            LEFT JOIN link_check_history_redirects lchr
+                ON (lchr.id_link_history_id = lch.id)
+            ORDER BY lch.id ASC, lchr.id_redirects ASC';
+
+        $resultSet = $conn->executeQuery($sql);
+
+        return $resultSet->fetchAllAssociative();
+    }
+
+    public function getLinkCheckData(): array
+    {
+        return $this->createQueryBuilder('lch')
+            ->leftJoin('link_check_history_redirects', 'lchr',
+                'ON','lchr.id_redirects = lch.id')
+            ->addSelect('lchr')
+            ->getQuery()
+            ->getResult();
+    }
 //    /**
 //     * @return LinkCheckHistoryRedirects[] Returns an array of LinkCheckHistoryRedirects objects
 //     */

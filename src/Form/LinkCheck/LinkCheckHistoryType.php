@@ -19,7 +19,7 @@ class LinkCheckHistoryType extends AbstractType
             ->add('url',TextType::class)
             ->add('max_redirects',IntegerType::class)
             //->add('type',RadioType::class)
-            ->add('key_words',TextareaType::class)
+            ->add('key_words',TextareaType::class, ['required' => false])
         ;
     }
 

@@ -3,6 +3,7 @@
 namespace App\Controller\LinkCheck;
 
 use App\Entity\LinkCheck\LinkCheckHistory;
+use App\Entity\LinkCheck\LinkCheckHistoryRedirects;
 use App\Form\LinkCheck\LinkCheckHistoryType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -20,23 +21,9 @@ class LinkCheckerController extends AbstractController
     private array $redirects = [];
     private array $errors = [];
 
-    public function createLinkHistory(EntityManagerInterface $entityManager): Response
-    {
-        $product = new LinkCheckHistory();
-        $product->setUrl('Keyboard');
-        $product->setPrice(1999);
-        $product->setDescription('Ergonomic and stylish!');
-
-        // tell Doctrine you want to (eventually) save the Product (no queries yet)
-        $entityManager->persist($product);
-
-        $entityManager->flush();
-
-        return new Response('Saved new product with id '.$product->getId());
-    }
 
     #[Route('/link/check', name: 'link_check')]
-    public function check(Request $request, ValidatorInterface $validator): Response
+    public function check(Request $request, ValidatorInterface $validator,EntityManagerInterface $entityManager): Response
     {
         $form = $this->createForm(LinkCheckHistoryType::class);
 
@@ -49,7 +36,12 @@ class LinkCheckerController extends AbstractController
             //Get submitted form data
             $formData = $form->getData();
 
-            $dataToRender['request_data'] = $this->processRequest($formData,$validator);
+            $request_data = $this->processRequest($formData,$validator);
+
+            $this->addLinkCheckHistoryEntity($formData['url'],$request_data,$entityManager);
+
+            $dataToRender['request_data'] = $request_data;
+
         }
         $dataToRender['redirect_to_history'] = $this->generateUrl('link_history_show');
         $dataToRender['errors'] = $this->errors;
@@ -112,15 +104,14 @@ class LinkCheckerController extends AbstractController
     }
 
     private function proccessKeywords(string $rawKeyWords, string $responseContent): void {
-        //force array
+        //Force array
         if(str_contains($rawKeyWords,PHP_EOL)){
             $keywords = explode(PHP_EOL,$rawKeyWords);
         } else {
             $keywords[] = $rawKeyWords;
         }
 
-        $result = [];
-        //get all words
+        //Get all words
         foreach ($keywords as $keyword) {
             $occurrences = substr_count($responseContent,$keyword);
             if (isset($this->keywords[$keyword])){
@@ -128,7 +119,6 @@ class LinkCheckerController extends AbstractController
             } else {
                 $this->keywords[$keyword] = $occurrences;
             }
-
         }
     }
 
@@ -144,14 +134,16 @@ class LinkCheckerController extends AbstractController
             $redirectUrl = $response->getInfo('redirect_url');
 
             if ($statusCode >= 300 && $statusCode < 400) {
-                $this->redirects[] = $redirectUrl;
+                $this->redirects[$redirectUrl] = $statusCode;
                 $url = $redirectUrl;
             } else {
                 try {
                     $content = $response->getContent();
 
                     // Check if the response content contains a specific keyword
-                    $this->proccessKeywords($formKeywords,$content);
+                    if(!empty($formKeywords)) {
+                        $this->proccessKeywords($formKeywords, $content);
+                    }
                 } catch (\Exception $e){
                     error_log($e->getMessage());
                     $this->errors[] = $e->getMessage();
@@ -161,6 +153,60 @@ class LinkCheckerController extends AbstractController
             }
         }
         return $statusCode;
+    }
+
+    /**
+     * Adds LinkCheckHistory entity to database
+     * @param $url
+     * @param $entityManager
+     * @return int|null
+     */
+    private function addLinkCheckHistoryEntity ($url, $requestData, $entityManager) {
+        $linkHistory = new LinkCheckHistory();
+        $linkHistory->setUrl($url);
+        $linkHistory->setDateAdd();
+        $linkHistory->setStatus($requestData['status']);
+
+        if(!empty($this->keywords)){
+            $keywords = $occurrences = [];
+            foreach ($this->keywords as $keyword => $occurrence){
+                $keywords[] = $keyword;
+                $occurrences[] = $occurrence;
+            }
+            $linkHistory->setKeywords($keywords);
+            $linkHistory->setKeywordOccurrences($occurrences);
+        }
+
+        $entityManager->persist($linkHistory);
+        $entityManager->flush();
+
+        $linkHistoryId = $linkHistory->getId();
+        if(empty($this->redirects)){
+            return $linkHistoryId;
+        }
+
+        $this->addLinkCheckHistoryRedirectsEntity($linkHistory,$entityManager);
+
+        return $linkHistoryId;
+    }
+
+    /**
+     * Adds LinkCheckHistoryRedirects entities to database by joining them in the process
+     * @param $linkHistory
+     * @param $entityManager
+     * @return bool
+     */
+    private function addLinkCheckHistoryRedirectsEntity($linkHistory,$entityManager){
+        foreach ($this->redirects as $redirect => $statusCode){
+            $linkHistoryRedirects = new LinkCheckHistoryRedirects();
+            $linkHistoryRedirects->setUrl($redirect);
+            $linkHistoryRedirects->setStatus($statusCode);
+            $linkHistoryRedirects->setLinkCheckHistory($linkHistory);
+
+            $entityManager->persist($linkHistoryRedirects);
+        }
+        $entityManager->flush();
+        return true;
     }
 
 }

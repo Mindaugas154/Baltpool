@@ -40,6 +40,14 @@ class LinkCheckHistoryRepository extends ServiceEntityRepository
         }
     }
 
+    public function getLinkCheckData(): array
+    {
+        return $this->createQueryBuilder('lch')
+            ->leftJoin('lch.redirects', 'lchr')
+            ->getQuery()
+            ->getResult();
+    }
+
 //    /**
 //     * @return LinkCheckHistory[] Returns an array of LinkCheckHistory objects
 //     */

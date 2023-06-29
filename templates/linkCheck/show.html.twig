@@ -2,8 +2,39 @@
 
 {% block body %}
     <div class="container">
-        <h1>URL History</h1>
+        <h1 class="text-center">{% block title %}URL History{% endblock %}</h1>
+        <a class="btn btn-primary" type="submit" href="{{ redirect_to_check }}">Generate history</a>
+        <table class="table table-striped">
+            <thead>
+            <tr>
+                <th scope="col">Link Check ID</th>
+                <th scope="col">URL</th>
+                <th scope="col">Final status</th>
+                <th scope="col">Keywords and it's occurrences</th>
+                <th scope="col">Redirect Urls ant it's statuses</th>
+            </tr>
+            </thead>
+            <tbody>
+                {% for  linkHistoryData in linkHistory %}
+                    <tr>
+                        <th scope="row">{{ linkHistoryData.getId() }}</th>
+                        <td>{{ linkHistoryData.getUrl() }}</td>
+                        <td>{{ linkHistoryData.getStatus() }}</td>
+                        <td>
+                            {% for key,keywordOccurrences in linkHistoryData.getKeywordOccurrences() %}
+                            {{ keywordOccurrences }} - {{ linkHistoryData.getKeywords()[key] }}<br>
+                            {% endfor %}
+                        </td>
 
+                        <td>
+                            {% for redirectsData in linkHistoryData.getRedirects() %}
+                                {{ redirectsData.getUrl() }} - {{ redirectsData.getStatus() }}<br>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
 {% endblock %}

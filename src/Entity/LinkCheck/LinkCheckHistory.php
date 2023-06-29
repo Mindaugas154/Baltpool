@@ -2,7 +2,6 @@
 
 namespace App\Entity\LinkCheck;
 
-use App\Entity\Test;
 use App\Repository\LinkCheckHistoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -23,31 +22,46 @@ class LinkCheckHistory
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[ORM\OneToMany(mappedBy: 'id_link_history', targetEntity: LinkCheckHistoryRedirects::class, orphanRemoval: true)]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     private string $url;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $dateAdd = null;
+    private ?\DateTime $dateAdd = null;
 
     //compressed information, multiple records separated by ":"
     #[ORM\Column(length: 255)]
-    private string $keyword_occurrences;
+    private ?string $keyword_occurrences = null;
 
     //compressed information, multiple records separated by ":"
     #[ORM\Column(length: 255)]
-    private string $keywords;
+    private ?string $keywords = null;
+
+    #[ORM\Column]
+    private int $status;
+
+    #[ORM\OneToMany(mappedBy: 'id_link_history', targetEntity: LinkCheckHistoryRedirects::class, orphanRemoval: true)]
+    private Collection $redirects;
+
+    public function __construct()
+    {
+        $this->redirects = new ArrayCollection();
+    }
+
+    public function getRedirects(): Collection
+    {
+        return $this->redirects;
+    }
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getUrl(): ?int
+    public function getUrl(): ?string
     {
-        return $this->id;
+        return $this->url;
     }
 
     public function setUrl(string $url): void
@@ -55,17 +69,17 @@ class LinkCheckHistory
         $this->url = $url;
     }
 
-    public function getDateAdd(): ?int
+    public function getStatus(): ?int
     {
-        return $this->dateAdd;
+        return $this->status;
     }
 
-    public function setDateAdd(): void
+    public function setStatus(int $status): void
     {
-        $this->dateAdd = date('Y-m-d H:i:s');
+        $this->status = $status;
     }
 
-    public function getKeywordOccurrences(): array
+    public function getKeywordOccurrences(): ?array
     {
         if(str_contains($this->keyword_occurrences,':')){
             $keyword_occurrences = explode(':',$this->keyword_occurrences);
@@ -75,13 +89,13 @@ class LinkCheckHistory
         return $keyword_occurrences;
     }
 
-    public function setKeywordOccurrences(array $occurrences): void
+    public function setKeywordOccurrences(?array $occurrences): void
     {
         $occurrences = implode(':',$occurrences);
         $this->keyword_occurrences = $occurrences;
     }
 
-    public function getKeywords(): array
+    public function getKeywords(): ?array
     {
         if(str_contains($this->keywords,':')){
             $keywords = explode(':',$this->keywords);
@@ -91,51 +105,19 @@ class LinkCheckHistory
         return $keywords;
     }
 
-    public function setKeywords(array $keywords): void
+    public function setKeywords(?array $keywords): void
     {
         $keywords = implode(':',$keywords);
         $this->keywords = $keywords;
     }
 
-    /**
-     * @return Collection<int, Test>
-     */
-    public function getTests(): Collection
+    public function getDateAdd(): \DateTime
     {
-        return $this->tests;
+        return $this->dateAdd;
     }
 
-    public function addTest(Test $test): static
+    public function setDateAdd(): void
     {
-        if (!$this->tests->contains($test)) {
-            $this->tests->add($test);
-            $test->setLinkId($this);
-        }
-
-        return $this;
-    }
-
-    public function removeTest(Test $test): static
-    {
-        if ($this->tests->removeElement($test)) {
-            // set the owning side to null (unless already changed)
-            if ($test->getLinkId() === $this) {
-                $test->setLinkId(null);
-            }
-        }
-
-        return $this;
-    }
-
-    public function getIdLinkHistory(): ?LinkCheckHistoryRedirects
-    {
-        return $this->id_link_history;
-    }
-
-    public function setIdLinkHistory(?LinkCheckHistoryRedirects $id_link_history): static
-    {
-        $this->id_link_history = $id_link_history;
-
-        return $this;
+        $this->dateAdd = new \DateTime();
     }
 }
